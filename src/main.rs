@@ -10,8 +10,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut app = App::new();
     let app_result = app.run(&mut terminal);
     ratatui::restore();
-    // println!("{:#?}", app.sub_files);
-    // println!("{:#?}", app.files[0]);
-    println!("{}", app.finnal_dir());
+    if app.output {
+        println!("{}", app.finnal_dir());
+    } else {
+        println!("{}", app.current_dir);
+    }
     app_result
 }

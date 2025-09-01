@@ -6,7 +6,7 @@ pub struct File {
     pub file_type: FileType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FileType {
     Dir,
     File,

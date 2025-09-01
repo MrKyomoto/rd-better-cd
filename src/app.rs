@@ -18,6 +18,7 @@ pub struct App {
     pub sub_files: Vec<File>, // NOTE: sub dir's files
     pub filter_hidden_file: bool,
     pub exit: bool,
+    pub output: bool,
 }
 
 impl App {
@@ -45,12 +46,13 @@ impl App {
             sub_files: sub_files,
             filter_hidden_file: false,
             exit: false,
+            output: true,
         }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Box<dyn Error>> {
         while !self.exit {
-            terminal.draw(|f| render_ui(f, &self))?;
+            terminal.draw(|f| render_ui(f, &self).unwrap())?;
             self.handle_event()?;
         }
 
@@ -83,7 +85,7 @@ impl App {
         }
 
         match key_event.code {
-            KeyCode::Esc => {
+            KeyCode::Esc | KeyCode::Char('h') => {
                 let parent_dir = get_parent_dir(&self.current_dir)?
                     .into_os_string()
                     .into_string()
@@ -98,7 +100,7 @@ impl App {
                     }
                 }
             }
-            KeyCode::Enter => {
+            KeyCode::Enter | KeyCode::Char('l') => {
                 if !self.files.is_empty() {
                     if (0..self.files.len()).contains(&self.index) {
                         let sub_file = &self.files[self.index];
@@ -139,7 +141,7 @@ impl App {
 
                 self.update_sub_files();
             }
-            KeyCode::Char('h') | KeyCode::Char('H') => {
+            KeyCode::Char('H') => {
                 // FIX: so far I think filter_hidden_files might be useless
                 // now i don't think it's useless xd
                 self.filter_hidden_file = !self.filter_hidden_file;
@@ -161,6 +163,10 @@ impl App {
                         _ => {}
                     }
                 }
+            }
+            KeyCode::Char('q') | KeyCode::Char('Q') => {
+                self.output = false;
+                self.exit();
             }
             _ => {}
         }
