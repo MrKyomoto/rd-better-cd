@@ -186,6 +186,9 @@ pub fn render_ui(frame: &mut Frame, app: &App) -> Result<(), Box<dyn Error>> {
         " <↑/k ↓/j> ".blue().bold(),
         "move ".white(),
         " | ".into(),
+        " <q|Q> ".blue().bold(),
+        "quit ".white(),
+        " | ".into(),
     ]);
 
     let bottom_block_content = Paragraph::new(bottom_instructions.centered()).block(bottom_block);
