@@ -171,10 +171,10 @@ pub fn render_ui(frame: &mut Frame, app: &App) -> Result<(), Box<dyn Error>> {
         .style(Style::new().fg(Color::Cyan));
     let bottom_instructions = Line::from(vec![
         " | ".into(),
-        " <ESC/h> ".blue().bold(),
+        " <ESC/h/←> ".blue().bold(),
         "back".white(),
         " | ".into(),
-        " <Enter/l> ".blue().bold(),
+        " <Enter/l/→> ".blue().bold(),
         "into".white(),
         " | ".into(),
         " <Space> ".blue().bold(),

@@ -85,7 +85,7 @@ impl App {
         }
 
         match key_event.code {
-            KeyCode::Esc | KeyCode::Char('h') => {
+            KeyCode::Esc | KeyCode::Char('h') | KeyCode::Left => {
                 let parent_dir = get_parent_dir(&self.current_dir)?
                     .into_os_string()
                     .into_string()
@@ -100,7 +100,7 @@ impl App {
                     }
                 }
             }
-            KeyCode::Enter | KeyCode::Char('l') => {
+            KeyCode::Enter | KeyCode::Char('l') | KeyCode::Right => {
                 if !self.files.is_empty() {
                     if (0..self.files.len()).contains(&self.index) {
                         let sub_file = &self.files[self.index];
