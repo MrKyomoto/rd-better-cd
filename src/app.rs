@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 
 use ratatui::{
     crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
@@ -185,8 +185,13 @@ impl App {
         self.sub_files = if !self.files.is_empty() {
             match self.files[self.index].file_type {
                 FileType::Dir => {
-                    get_files(&(self.current_dir.clone() + "/" + &self.files[self.index].name))
-                        .unwrap()
+                    let mut path_buf = PathBuf::from(&self.current_dir);
+                    path_buf.push(&self.files[self.index].name);
+                    if let Some(path_str) = path_buf.to_str() {
+                        get_files(path_str).unwrap_or_default()
+                    } else {
+                        Vec::new()
+                    }
                 }
                 FileType::File => Vec::new(),
             }
