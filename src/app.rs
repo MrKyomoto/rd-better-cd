@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error, path::PathBuf};
 
 use ratatui::{
     crossterm::event::{self, KeyCode, KeyEvent, KeyEventKind},
@@ -22,24 +22,35 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
-        let current_dir = get_current_dir()
-            .unwrap()
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        let current_dir = get_current_dir()?
             .into_os_string()
             .into_string()
             .unwrap_or(String::from("."));
-        let files = get_files(&current_dir).unwrap();
+        let files = match get_files(&current_dir, None) {
+            Ok(files) => files,
+            Err(e) => {
+                eprintln!("Failed to read directory: {}", e);
+                Vec::new()
+            }
+        };
         let sub_files = if !files.is_empty() {
             match files[0].file_type {
                 // MEMO: due to the get_current_dir won't append '/' at the ending of the path so
                 // we have to add it mannually and THIS IS THE BUG WHICH COSTS MUCH TIME :(
-                FileType::Dir => get_files(&(current_dir.clone() + "/" + &files[0].name)).unwrap(),
+                FileType::Dir => match get_files(&current_dir, Some(&files[0].name)) {
+                    Ok(files) => files,
+                    Err(e) => {
+                        eprintln!("Failed to read directory: {}", e);
+                        Vec::new()
+                    }
+                },
                 FileType::File => Vec::new(),
             }
         } else {
             Vec::new()
         };
-        App {
+        Ok(App {
             current_dir: current_dir,
             files: files,
             index: 0,
@@ -47,7 +58,7 @@ impl App {
             filter_hidden_file: false,
             exit: false,
             output: true,
-        }
+        })
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Box<dyn Error>> {
@@ -95,8 +106,8 @@ impl App {
                     _ => {
                         self.current_dir = parent_dir;
                         self.index = 0;
-                        self.files = get_files(&self.current_dir)?;
-                        self.update_sub_files();
+                        self.files = get_files(&self.current_dir, None)?;
+                        self.update_sub_files()?;
                     }
                 }
             }
@@ -106,9 +117,11 @@ impl App {
                         let sub_file = &self.files[self.index];
                         match sub_file.file_type {
                             FileType::Dir => {
-                                self.current_dir
-                                    .push_str(&(String::from("/") + &sub_file.name));
-                                self.update();
+                                self.current_dir = PathBuf::from(&self.current_dir)
+                                    .join(&sub_file.name)
+                                    .to_string_lossy()
+                                    .into_owned();
+                                self.update()?;
                             }
                             _ => {}
                         }
@@ -126,7 +139,7 @@ impl App {
                     self.index = 0;
                 }
 
-                self.update_sub_files();
+                self.update_sub_files()?;
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 if !self.files.is_empty() {
@@ -139,7 +152,7 @@ impl App {
                     self.index = 0;
                 }
 
-                self.update_sub_files();
+                self.update_sub_files()?;
             }
             KeyCode::Char('H') => {
                 // FIX: so far I think filter_hidden_files might be useless
@@ -148,10 +161,16 @@ impl App {
                 if self.filter_hidden_file {
                     self.files = filter_hidden_files(self.files.to_vec());
                 } else {
-                    self.files = get_files(&self.current_dir)?;
+                    self.files = match get_files(&self.current_dir, None) {
+                        Ok(files) => files,
+                        Err(e) => {
+                            eprintln!("Failed to read directory: {}", e);
+                            Vec::new()
+                        }
+                    };
                 }
                 self.index = 0;
-                self.update_sub_files();
+                self.update_sub_files()?;
             }
             KeyCode::Char(' ') => {
                 // NOTE: if the pointted sub file is dir then it will be the finnal working dir
@@ -174,28 +193,38 @@ impl App {
     }
 
     /// NOTE: update based on the self.current_dir
-    fn update(&mut self) {
+    fn update(&mut self) -> Result<(), Box<dyn Error>> {
         self.files = self.sub_files.to_vec();
         self.index = 0;
-        self.update_sub_files();
+        self.update_sub_files()?;
+
+        Ok(())
     }
 
     /// NOTE: update based on the self.index
-    fn update_sub_files(&mut self) {
+    fn update_sub_files(&mut self) -> Result<(), Box<dyn Error>> {
         self.sub_files = if !self.files.is_empty() {
             match self.files[self.index].file_type {
                 FileType::Dir => {
-                    get_files(&(self.current_dir.clone() + "/" + &self.files[self.index].name))
-                        .unwrap()
+                    match get_files(&self.current_dir, Some(&self.files[self.index].name)) {
+                        Ok(files) => files,
+                        Err(e) => {
+                            eprintln!("Failed to read directory: {}", e);
+                            Vec::new()
+                        }
+                    }
                 }
                 FileType::File => Vec::new(),
             }
         } else {
             Vec::new()
         };
+
+        Ok(())
     }
 
-    pub fn finnal_dir(&self) -> String {
-        self.current_dir.clone() + "/" + &self.files[self.index].name
+    pub fn finnal_dir(&self) -> Result<String, Box<dyn Error>> {
+        let path = PathBuf::from(&self.current_dir).join(&self.files[self.index].name);
+        Ok(path.into_os_string().into_string().unwrap())
     }
 }
