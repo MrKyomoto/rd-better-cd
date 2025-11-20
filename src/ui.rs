@@ -1,4 +1,4 @@
-use std::{error::Error, fs};
+use std::{error::Error, fs, path::PathBuf};
 
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -152,7 +152,7 @@ pub fn render_ui(frame: &mut Frame, app: &App) -> Result<(), Box<dyn Error>> {
     });
 
     if !app.files.is_empty() && app.files[app.index].file_type == FileType::File {
-        let path = app.current_dir.clone() + "/" + &app.files[app.index].name;
+        let path = PathBuf::from(&app.current_dir).join(&app.files[app.index].name);
         let buffer = fs::read(path)?;
         let content =
             String::from_utf8(buffer).unwrap_or("Invalid UTF-8 content or Non-Text file".into());

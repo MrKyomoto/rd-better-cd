@@ -16,7 +16,7 @@ pub fn get_current_dir() -> Result<PathBuf, Box<dyn Error>> {
     std::env::current_dir().map_err(|e| e.into())
 }
 
-/// NOTE: if current dir is the very root dir, then it will ruturn itslef
+/// NOTE: if current dir is the very root dir, then it will ruturn itself
 pub fn get_parent_dir(path: &str) -> Result<PathBuf, Box<dyn Error>> {
     let path_buf = PathBuf::from(path);
     if let Some(parent_dir) = path_buf.parent() {
@@ -25,7 +25,14 @@ pub fn get_parent_dir(path: &str) -> Result<PathBuf, Box<dyn Error>> {
         Ok(path_buf.to_path_buf())
     }
 }
-pub fn get_files(path: &str) -> Result<Vec<File>, Box<dyn Error>> {
+
+/// NOTE: sub path == None means get the files from path
+/// sub path == Some(val) means get the files from sub path
+pub fn get_files(path: &str, sub_path: Option<&str>) -> Result<Vec<File>, Box<dyn Error>> {
+    let mut path = PathBuf::from(&path);
+    if let Some(sub_path) = sub_path {
+        path = path.join(&sub_path);
+    }
     let mut files = Vec::new();
     if let Ok(read_dir) = fs::read_dir(path) {
         for entry in read_dir {
